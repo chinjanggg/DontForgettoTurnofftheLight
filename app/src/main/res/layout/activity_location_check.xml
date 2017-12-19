@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.chinjanggg.dontforgettoturnoffthelight.MainActivity"
+    >
+
+    <TextView
+        android:id="@+id/latitude_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/btSetHome"
+        android:text="CURRENT Latitude: FINDING"
+        tools:text="CURRENT Latitude:" />
+
+    <TextView
+        android:id="@+id/longitude_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/btSetHome"
+        android:layout_alignBottom="@+id/btSetHome"
+        android:layout_alignLeft="@+id/latitude_textview"
+        android:layout_alignStart="@+id/latitude_textview"
+        android:text="CURRENT Longitude: FINDING"
+        tools:text="CURRENT Longitude:" />
+
+    <Button
+        android:id="@+id/btSetHome"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginEnd="19dp"
+        android:layout_marginRight="19dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/home"
+        android:elevation="24dp"
+        android:onClick="setHome" />
+
+    <Button
+        android:id="@+id/btSwitch"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="151dp"
+        android:background="@drawable/idea"
+        android:onClick="switchLight" />
+
+    <TextView
+        android:id="@+id/homeLat_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/btSetHome"
+        android:layout_alignLeft="@+id/longitude_textview"
+        android:layout_alignStart="@+id/longitude_textview"
+        android:text="HOME Latitude: NOT SET"
+        tools:text="HOME Latitude: NOT SET" />
+
+    <TextView
+        android:id="@+id/homeLong_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/homeLat_textview"
+        android:layout_alignStart="@+id/homeLat_textview"
+        android:layout_below="@+id/homeLat_textview"
+        android:layout_marginTop="13dp"
+        android:text="HOME Longitude: NOT SET"
+        tools:text="HOME Longitude: NOT SET" />
+
+    <TextView
+        android:id="@+id/status_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/seekBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="54dp"
+        android:text="STATUS: ON"
+        android:textColor="@color/common_google_signin_btn_text_dark_focused"
+        android:textSize="30sp" />
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="23dp"
+        android:max="100"
+        android:min="0" />
+
+    <TextView
+        android:id="@+id/seek_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/seekBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="33dp"
+        android:text="(brightness: 100%)" />
+
+</RelativeLayout>
