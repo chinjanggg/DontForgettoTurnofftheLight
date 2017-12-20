@@ -1,10 +1,12 @@
 package com.chinjanggg.dontforgettoturnoffthelight;
 
 import android.Manifest;
+import android.app.Notification;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -13,6 +15,8 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -112,16 +116,7 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    private class DownloadFilesTask extends AsyncTask<URL, Void, String> {
-        protected String doInBackground(URL... urls) {
-            return downloadRemoteTextFileContent();
-        }
-        protected void onPostExecute(String result) {
-            if(!TextUtils.isEmpty(result)){
-                fileContent.setText(result);
-            }
-        }
-    }
+
 
 
 
@@ -222,29 +217,6 @@ public class MainActivity extends AppCompatActivity
         return isLocationEnabled();
     }
 
-    private String downloadRemoteTextFileContent(){
-        URL mUrl = null;
-        String content = "";
-        try {
-            mUrl = new URL(PATH_TO_SERVER);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        try {
-            assert mUrl != null;
-            URLConnection connection = mUrl.openConnection();
-            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String line = "";
-            while((line = br.readLine()) != null){
-                content += line;
-            }
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return content;
-    }
-
     private void showAlert() {
         final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Enable Location")
@@ -296,22 +268,66 @@ public class MainActivity extends AppCompatActivity
         latDif = homeLat-currentLat;
         longDif = homeLong-currentLong;
         if((latDif > soFarAway || latDif < -soFarAway || longDif > soFarAway || longDif < -soFarAway) && isLightOn) {
-            sendNotification();
+            //sendNotification();
         }
     }
 
     //Implement anything as you want, you can delete and write a new one with different function name
-    public void sendNotification() {
+    public void sendNotification(View view) {
         /*
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         Notification notification = new Notification(R.drawable.ic_launcher, )
         */
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MainActivity.this)
+                .setSmallIcon(android.R.drawable.stat_notify_error)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setContentTitle("Forgotten Lamp")
+                .setContentText("You forgot to turn off the light");
+        notificationBuilder.setDefaults(
+                Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS | Notification.DEFAULT_VIBRATE);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MainActivity.this);
+        notificationManager.notify(1, notificationBuilder.build());
 
     }
 
 
     //---------End Location---------//
 
+
+    //---------Server Connection---------//
+    private class DownloadFilesTask extends AsyncTask<URL, Void, String> {
+        protected String doInBackground(URL... urls) {
+            return downloadRemoteTextFileContent();
+        }
+        protected void onPostExecute(String result) {
+            if(!TextUtils.isEmpty(result)){
+                fileContent.setText(result);
+            }
+        }
+    }
+
+    private String downloadRemoteTextFileContent(){
+        URL mUrl = null;
+        String content = "";
+        try {
+            mUrl = new URL(PATH_TO_SERVER);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert mUrl != null;
+            URLConnection connection = mUrl.openConnection();
+            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String line = "";
+            while((line = br.readLine()) != null){
+                content += line;
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return content;
+    }
 
 
     //---------Set SeekBar---------//

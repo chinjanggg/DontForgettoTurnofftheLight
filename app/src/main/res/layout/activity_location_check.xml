@@ -111,4 +111,14 @@
         android:layout_marginBottom="11dp"
         android:text="TextView" />
 
+    <Button
+        android:id="@+id/bt_noti"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/btSetHome"
+        android:layout_alignRight="@+id/btSetHome"
+        android:layout_alignTop="@+id/btSwitch"
+        android:text="Button"
+        android:onClick="sendNotification"/>
+
 </RelativeLayout>
