@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
+import android.os.CountDownTimer;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,8 +16,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,6 +28,18 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
@@ -45,6 +61,11 @@ public class MainActivity extends AppCompatActivity
     final private double soFarAway = 0.0003000;
     private View view;
     private int seekBarProgressValue=100;
+    private TextView fileContent;
+    private static final String PATH_TO_SERVER = "http://10.207.73.248/project/newfile.txt";
+    private static final String PATH_TO_ON = "http://10.207.73.248/project/sample.php?value=ON";
+    private static final String PATH_TO_OFF = "http://10.207.73.248/project/sample.php?value=OFF";
+    DownloadFilesTask downloadFilesTask = new DownloadFilesTask();
 
 
     //---------Main---------//
@@ -52,6 +73,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location_check);
+        fileContent = (TextView)findViewById(R.id.testtextView);
 
         view = this.getWindow().getDecorView();
         view.setBackgroundResource(R.color.yellow);
@@ -68,7 +90,40 @@ public class MainActivity extends AppCompatActivity
         seekBarSet();
         checkLocation();
         checkDistance();
+
+        //Declare the timer
+        Timer myTimer = new Timer();
+        //Set the schedule function and rate
+        myTimer.scheduleAtFixedRate(new TimerTask() {
+                                        @Override
+                                        public void run() {
+                                            //Called at every 1000 milliseconds (1 second)
+                                            downloadFilesTask = new DownloadFilesTask();
+                                            downloadFilesTask.execute();
+                                            Log.i("MainActivity", "Repeated task");
+                                        }
+                                    },
+                //set the amount of time in milliseconds before first execution
+                0,
+                //Set the amount of time between each execution (in milliseconds)
+                300);
+
+
+
     }
+
+    private class DownloadFilesTask extends AsyncTask<URL, Void, String> {
+        protected String doInBackground(URL... urls) {
+            return downloadRemoteTextFileContent();
+        }
+        protected void onPostExecute(String result) {
+            if(!TextUtils.isEmpty(result)){
+                fileContent.setText(result);
+            }
+        }
+    }
+
+
 
 
     //---------Location---------//
@@ -165,6 +220,29 @@ public class MainActivity extends AppCompatActivity
         if(!isLocationEnabled())
             showAlert();
         return isLocationEnabled();
+    }
+
+    private String downloadRemoteTextFileContent(){
+        URL mUrl = null;
+        String content = "";
+        try {
+            mUrl = new URL(PATH_TO_SERVER);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert mUrl != null;
+            URLConnection connection = mUrl.openConnection();
+            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String line = "";
+            while((line = br.readLine()) != null){
+                content += line;
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return content;
     }
 
     private void showAlert() {
@@ -280,12 +358,43 @@ public class MainActivity extends AppCompatActivity
         view.setBackgroundColor(getResources().getColor(R.color.gray));
         ((TextView)findViewById(R.id.status_textview)).setText("STATUS: OFF");
         findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea2);
+        URL mUrl = null;
+        String content = "";
+        try {
+            mUrl = new URL(PATH_TO_OFF);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert mUrl != null;
+            URLConnection connection = mUrl.openConnection();
+            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void turnOnTheLight() {
         view.setBackgroundColor(getResources().getColor(R.color.yellow));
         ((TextView)findViewById(R.id.status_textview)).setText("STATUS: ON");
         findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea);
+        URL mUrl = null;
+        String content = "";
+        try {
+            mUrl = new URL(PATH_TO_ON);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try {
+            assert mUrl != null;
+            URLConnection connection = mUrl.openConnection();
+            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -102,4 +102,13 @@
         android:layout_marginBottom="33dp"
         android:text="(brightness: 100%)" />
 
+    <TextView
+        android:id="@+id/testtextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/seekBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="11dp"
+        android:text="TextView" />
+
 </RelativeLayout>
