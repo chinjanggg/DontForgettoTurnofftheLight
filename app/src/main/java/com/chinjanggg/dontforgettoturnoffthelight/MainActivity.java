@@ -8,7 +8,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.os.CountDownTimer;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,8 +18,6 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,12 +26,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -58,14 +52,14 @@ public class MainActivity extends AppCompatActivity
     private boolean isLightOn = true;
     private double latDif;
     private double longDif;
-    final private double soFarAway = 0.0003000;
+    final private double soFarAway = 0.0000100;
     private View view;
-    private int seekBarProgressValue=100;
-    private TextView fileContent;
-    private static final String PATH_TO_SERVER = "http://10.207.73.248/project/newfile.txt";
-    private static final String PATH_TO_ON = "http://10.207.73.248/project/sample.php?value=ON";
-    private static final String PATH_TO_OFF = "http://10.207.73.248/project/sample.php?value=OFF";
+    private boolean isSetLocation = false;
+    private static final String PATH_TO_SERVER = "http://192.168.43.167/project/newfile.txt";
+    private static final String PATH_TO_ON = "http://192.168.43.167/project/sample.php?value=ON";
+    private static final String PATH_TO_OFF = "http://192.168.43.167/project/sample.php?value=OFF";
     DownloadFilesTask downloadFilesTask = new DownloadFilesTask();
+    CheckDistance checkDistance = new CheckDistance();
 
 
     //---------Main---------//
@@ -73,11 +67,9 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location_check);
-        fileContent = (TextView)findViewById(R.id.testtextView);
 
         view = this.getWindow().getDecorView();
         view.setBackgroundResource(R.color.yellow);
-        ((SeekBar)findViewById(R.id.seekBar)).setProgress(seekBarProgressValue);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -86,10 +78,7 @@ public class MainActivity extends AppCompatActivity
                 .build();
 
         mLocationManager = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
-
-        seekBarSet();
         checkLocation();
-        checkDistance();
 
         //Declare the timer
         Timer myTimer = new Timer();
@@ -99,6 +88,8 @@ public class MainActivity extends AppCompatActivity
                                         public void run() {
                                             //Called at every 1000 milliseconds (1 second)
                                             downloadFilesTask = new DownloadFilesTask();
+                                            checkDistance = new CheckDistance();
+                                            checkDistance.execute();
                                             downloadFilesTask.execute();
                                             Log.i("MainActivity", "Repeated task");
                                         }
@@ -118,7 +109,23 @@ public class MainActivity extends AppCompatActivity
         }
         protected void onPostExecute(String result) {
             if(!TextUtils.isEmpty(result)){
-                fileContent.setText(result);
+                System.out.println(result);
+                ((TextView)findViewById(R.id.status_textview)).setText("STATUS: "+result);
+                if (result.trim().equals("ON")){
+                    isLightOn = true;
+                    view.setBackgroundColor(getResources().getColor(R.color.yellow));
+                    findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea);
+                }
+                else if (result.trim().equals("OFF")){
+                    isLightOn = false;
+                    view.setBackgroundColor(getResources().getColor(R.color.gray));
+                    findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea2);
+                }
+//
+//
+//                    view.setBackgroundColor(getResources().getColor(R.color.gray));
+//                    findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea2);
+
             }
         }
     }
@@ -242,6 +249,7 @@ public class MainActivity extends AppCompatActivity
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return content;
     }
 
@@ -277,6 +285,7 @@ public class MainActivity extends AppCompatActivity
     public void setHome(View view) {
         homeLat = currentLat;
         homeLong = currentLong;
+        isSetLocation=true;
         ((TextView)findViewById(R.id.homeLat_textview)).setText("Home Latitude: " + Double.toString(homeLat));
         ((TextView)findViewById(R.id.homeLong_textview)).setText("Home Longitude: " + Double.toString(homeLong));
         String msg = "Updated Home Location: " +
@@ -292,21 +301,22 @@ public class MainActivity extends AppCompatActivity
     //We don't need to use check distance function, we will use checkInHouse value from nodeMCU, I just write to test alert
     //I didn't create a variable for checkInHouse yet, do anything you want
 
-    public void checkDistance() {
-        latDif = homeLat-currentLat;
-        longDif = homeLong-currentLong;
-        if((latDif > soFarAway || latDif < -soFarAway || longDif > soFarAway || longDif < -soFarAway) && isLightOn) {
-            sendNotification();
+
+    private class CheckDistance extends AsyncTask<URL, Void, String> {
+        protected String doInBackground(URL... urls) {
+            if (isSetLocation) {
+                latDif = homeLat - currentLat;
+                longDif = homeLong - currentLong;
+                if ((latDif > soFarAway || latDif < -soFarAway || longDif > soFarAway || longDif < -soFarAway) && isLightOn) {
+                    turnOffTheLight();
+                }
+            }
+            return "";
         }
-    }
-
-    //Implement anything as you want, you can delete and write a new one with different function name
-    public void sendNotification() {
-        /*
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        Notification notification = new Notification(R.drawable.ic_launcher, )
-        */
-
+        protected void onPostExecute(String result) {
+            if(!TextUtils.isEmpty(result)){
+            }
+        }
     }
 
 
@@ -314,32 +324,6 @@ public class MainActivity extends AppCompatActivity
 
 
 
-    //---------Set SeekBar---------//
-    public void seekBarSet() {
-        ((SeekBar)findViewById(R.id.seekBar)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                seekBarProgressValue = progress;
-                ((TextView)findViewById(R.id.seek_textview)).setText("(Brightness: " + seekBarProgressValue + "%)");
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                if(seekBarProgressValue == 0) {
-                    isLightOn = false;
-                    turnOffTheLight();
-                } else {
-                    isLightOn = true;
-                    turnOnTheLight();
-                }
-            }
-        });
-    }
 
 
     //---------Light---------//
@@ -347,53 +331,69 @@ public class MainActivity extends AppCompatActivity
         isLightOn = !isLightOn;
         if(isLightOn) {
             turnOnTheLight();
-            ((SeekBar)findViewById(R.id.seekBar)).setProgress(100);
         } else {
             turnOffTheLight();
-            ((SeekBar)findViewById(R.id.seekBar)).setProgress(0);
         }
     }
 
-    public void turnOffTheLight() {
+    public void turnOffTheLight()  {
         view.setBackgroundColor(getResources().getColor(R.color.gray));
-        ((TextView)findViewById(R.id.status_textview)).setText("STATUS: OFF");
         findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea2);
-        URL mUrl = null;
-        String content = "";
-        try {
-            mUrl = new URL(PATH_TO_OFF);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        try {
-            assert mUrl != null;
-            URLConnection connection = mUrl.openConnection();
-            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        TurnOff turnOff = new TurnOff();
+        turnOff.execute();
 
     }
+    private class TurnOff extends AsyncTask<URL, Void, String> {
+        protected String doInBackground(URL... urls) {
+            URL mUrl = null;
+            try {
+                mUrl = new URL(PATH_TO_OFF);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            try {
+                assert mUrl != null;
+                URLConnection connection = mUrl.openConnection();
+                connection.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return "";
+        }
+        protected void onPostExecute(String result) {
+            if(!TextUtils.isEmpty(result)){
+            }
+        }
+    }
+
 
     public void turnOnTheLight() {
         view.setBackgroundColor(getResources().getColor(R.color.yellow));
-        ((TextView)findViewById(R.id.status_textview)).setText("STATUS: ON");
         findViewById(R.id.btSwitch).setBackgroundResource(R.drawable.idea);
-        URL mUrl = null;
-        String content = "";
-        try {
-            mUrl = new URL(PATH_TO_ON);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        TurnOn turnOn = new TurnOn();
+        turnOn.execute();
+    }
+
+    private class TurnOn extends AsyncTask<URL, Void, String> {
+        protected String doInBackground(URL... urls) {
+            URL mUrl = null;
+            try {
+                mUrl = new URL(PATH_TO_ON);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            try {
+                assert mUrl != null;
+                URLConnection connection = mUrl.openConnection();
+                connection.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return "";
         }
-        try {
-            assert mUrl != null;
-            URLConnection connection = mUrl.openConnection();
-            BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        protected void onPostExecute(String result) {
+            if(!TextUtils.isEmpty(result)){
+            }
         }
     }
 
